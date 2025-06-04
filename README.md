@@ -1,3 +1,5 @@
+>ℹ️ This fork aims to be as close as possible to upstream while supporting a nanovms unikernel
+
 # Go Implementation of [WireGuard](https://www.wireguard.com/)
 
 This is an implementation of WireGuard in Go.
