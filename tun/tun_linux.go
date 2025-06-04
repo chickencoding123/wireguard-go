@@ -17,9 +17,9 @@ import (
 	"time"
 	"unsafe"
 
+	"github.com/chickencoding123/wireguard-go-nanovms/wireguard/conn"
+	"github.com/chickencoding123/wireguard-go-nanovms/wireguard/rwcancel"
 	"golang.org/x/sys/unix"
-	"golang.zx2c4.com/wireguard/conn"
-	"golang.zx2c4.com/wireguard/rwcancel"
 )
 
 const (

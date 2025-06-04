@@ -11,8 +11,8 @@ import (
 	"bytes"
 	"os"
 
-	"golang.zx2c4.com/wireguard/device"
-	"golang.zx2c4.com/wireguard/wgconfig"
+	"github.com/chickencoding123/wireguard-go-nanovms/wireguard/device"
+	"github.com/chickencoding123/wireguard-go-nanovms/wireguard/wgconfig"
 )
 
 const ENV_WG_CONFIG_FILE = "WG_CONFIG_FILE"

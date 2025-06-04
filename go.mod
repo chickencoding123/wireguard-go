@@ -1,4 +1,4 @@
-module golang.zx2c4.com/wireguard
+module github.com/chickencoding123/wireguard-go-nanovms/wireguard
 
 go 1.23.1
 

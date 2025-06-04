@@ -20,8 +20,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/chickencoding123/wireguard-go-nanovms/wireguard/ipc/namedpipe"
 	"golang.org/x/sys/windows"
-	"golang.zx2c4.com/wireguard/ipc/namedpipe"
 )
 
 func randomPipePath() string {
