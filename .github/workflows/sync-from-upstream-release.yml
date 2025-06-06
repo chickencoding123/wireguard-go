@@ -1,0 +1,72 @@
+name: Sync from upstream release
+
+on:
+  schedule:
+    - cron: '0 6 * * *'  # daily 6am rather than 12am to spread cron load on github system
+  workflow_dispatch:     # allows manual triggering
+
+jobs:
+    sync-on-release:
+      runs-on: ubuntu-latest
+
+      steps:
+        - name: Checkout fork
+          uses: actions/checkout@v4
+          with:
+            fetch-depth: 0
+
+        - name: Set up Git
+          run: |
+            git config --global user.name "github-actions[bot]"
+            git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+        - name: Add upstream remote
+          run: |
+            git remote add upstream https://github.com/wireguard/wireguard-go.git
+            git fetch --tags upstream
+
+        - name: Get latest upstream tag
+          id: gettag
+          run: |
+            latest_tag=$(git ls-remote --tags upstream | grep -o 'refs/tags/.*' | sed 's/refs\/tags\///' | sort -V | tail -n1)
+            echo "Latest tag is $latest_tag"
+            echo "latest_tag=$latest_tag" >> "$GITHUB_OUTPUT"
+
+        - name: Extract current version from version.go
+          id: versiongo
+          run: |
+            current_version=$(grep -oP 'Version = "\K[^"]+' version.go)
+            echo "Current version: $current_version"
+            echo "current_version=$current_version" >> "$GITHUB_OUTPUT"
+
+        - name: Check if new tag exists
+          if: steps.gettag.outputs.latest_tag != steps.versiongo.outputs.current_version
+          run: |
+            echo "New tag detected: ${{ steps.gettag.outputs.latest_tag }} != ${{ steps.versiongo.outputs.current_version }}"
+
+        - name: Create sync branch from upstream tag
+          if: steps.gettag.outputs.latest_tag != steps.versiongo.outputs.current_version
+          run: |
+            git fetch upstream tag ${{ steps.gettag.outputs.latest_tag }}
+            git checkout -B sync-release-${{ steps.gettag.outputs.latest_tag }} ${{ steps.gettag.outputs.latest_tag }}
+
+        - name: Update version.go with new version
+          if: steps.gettag.outputs.latest_tag != steps.versiongo.outputs.current_version
+          run: |
+            sed -i 's/Version = ".*"/Version = "${{ steps.gettag.outputs.latest_tag }}"/' version.go
+            git add version.go
+            git commit -m "Update version.go to ${{ steps.gettag.outputs.latest_tag }}"
+            git push -f origin sync-release-${{ steps.gettag.outputs.latest_tag }}
+
+        - name: Create or update pull request
+          if: steps.gettag.outputs.latest_tag != steps.versiongo.outputs.current_version
+          uses: peter-evans/create-pull-request@v6
+          with:
+            token: ${{ secrets.GITHUB_TOKEN }}
+            commit-message: "Sync with upstream release ${{ steps.gettag.outputs.latest_tag }}"
+            title: "chore: sync fork with upstream release ${{ steps.gettag.outputs.latest_tag }}"
+            body: |
+              Automated PR to sync fork with upstream release `${{ steps.gettag.outputs.latest_tag }}`
+              This will update `version.go` to reflect the upstream release tag.
+            base: master
+            branch: sync-release-${{ steps.gettag.outputs.latest_tag }}
