@@ -28,7 +28,7 @@ jobs:
         - name: Get latest upstream tag
           id: gettag
           run: |
-            latest_tag=$(git ls-remote --tags upstream | grep -o 'refs/tags/.*' | sed 's/refs\/tags\///' | sort -V | tail -n1)
+            latest_tag=$(git ls-remote --tags upstream | grep -o 'refs/tags/.*' | sed 's/refs\/tags\///' | sort -V | head -n1)
             echo "Latest tag is $latest_tag"
             echo "latest_tag=$latest_tag" >> "$GITHUB_OUTPUT"
 
@@ -49,14 +49,6 @@ jobs:
           run: |
             git fetch upstream tag ${{ steps.gettag.outputs.latest_tag }}
             git checkout -B sync-release-${{ steps.gettag.outputs.latest_tag }} ${{ steps.gettag.outputs.latest_tag }}
-
-        - name: Update version.go with new version
-          if: steps.gettag.outputs.latest_tag != steps.versiongo.outputs.current_version
-          run: |
-            sed -i 's/Version = ".*"/Version = "${{ steps.gettag.outputs.latest_tag }}"/' version.go
-            git add version.go
-            git commit -m "Update version.go to ${{ steps.gettag.outputs.latest_tag }}"
-            git push -f origin sync-release-${{ steps.gettag.outputs.latest_tag }}
 
         - name: Create or update pull request
           if: steps.gettag.outputs.latest_tag != steps.versiongo.outputs.current_version
