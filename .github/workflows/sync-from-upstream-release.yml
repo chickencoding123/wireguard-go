@@ -28,7 +28,7 @@ jobs:
         - name: Get latest upstream tag
           id: gettag
           run: |
-            latest_tag=$(git ls-remote --tags upstream | grep -o 'refs/tags/.*' | sed 's/refs\/tags\///' | sort -V | head -n1)
+            latest_tag=$(git ls-remote --tags upstream | grep -o 'refs/tags/.*' | sed 's/refs\/tags\///' | sed 's/v//' | sed 's/\^{}//' | sort -V | tail -n1)
             echo "Latest tag is $latest_tag"
             echo "latest_tag=$latest_tag" >> "$GITHUB_OUTPUT"
 
@@ -47,8 +47,17 @@ jobs:
         - name: Create sync branch from upstream tag
           if: steps.gettag.outputs.latest_tag != steps.versiongo.outputs.current_version
           run: |
-            git fetch upstream tag ${{ steps.gettag.outputs.latest_tag }}
-            git checkout -B sync-release-${{ steps.gettag.outputs.latest_tag }} ${{ steps.gettag.outputs.latest_tag }}
+            latest_tag="${{ steps.gettag.outputs.latest_tag }}"
+            branch_name="sync-release-${latest_tag}"
+    
+            echo "Fetching tag ${latest_tag} from upstream..."
+            git fetch upstream tag "${latest_tag}"
+            
+            echo "Creating and checking out branch ${branch_name} from upstream/${latest_tag}..."
+            git checkout -B "${branch_name}" "upstream/${latest_tag}"
+            
+            echo "Pushing branch ${branch_name} to origin and setting upstream..."
+            git push origin --set-upstream "${branch_name}"
 
         - name: Create or update pull request
           if: steps.gettag.outputs.latest_tag != steps.versiongo.outputs.current_version
